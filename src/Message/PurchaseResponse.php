@@ -114,7 +114,37 @@ Possible action: You can capture the authorization, but consider reviewing the o
     {
         return (isset($this->reasonCodes[$this->getReasonCode()]))? $this->reasonCodes[$this->getReasonCode()] : $this->tags['decision']['value'];
     }
+    
+    /**
+     * Get the error message from the response.
+     *
+     * Returns null if the request was successful.
+     *
+     * @return string|null
+     */
+    public function getCode()
+    {
+        if (!$this->isSuccessful()) {
+            return $this->getReasonCode();
+        }
+        return null;
+    }
 
+    /**
+     * Get the error message from the response.
+     *
+     * Returns null if the request was successful.
+     *
+     * @return string|null
+     */
+    public function getMessage()
+    {
+        if (!$this->isSuccessful()) {
+            return $this->getReasonText();
+        }
+        return null;
+    }
+    
     public function getInvalidFields()
     {
         return explode(',',$this->tags['invalid_fields']);
