@@ -52,10 +52,10 @@ Possible action: You can capture the authorization, but consider reviewing the o
         520 => "The authorization request was approved by the issuing bank but declined by CyberSource based on your legacy Smart Authorization settings.\nPossible action: Review the authorization request."
     );
 
-    public function __construct(RequestInterface $request, $data)
+    public function __construct(RequestInterface $request, \Guzzle\Http\Message\Response $response)
     {
-        parent::__construct($request,$data);
-        $this->tags=$this->processData($data);
+        parent::__construct($request,$response->getBody());
+        $this->tags=$this->processData($this->data);
     }
 
     public function isSuccessful()
@@ -84,7 +84,13 @@ Possible action: You can capture the authorization, but consider reviewing the o
     {
         $output = preg_match_all('/<input id="(?P<id>.*)" name="(?P<name>.*)" type="(?<type>.*)" value="(?<value>.*)" \/>/',(string) $this->data,$matches);
         if(!$output) $output = preg_match_all('/<input type="(?<type>.*)" name="(?P<name>.*)" id="(?P<id>.*)" value="(?<value>.*)" \/>/',(string) $this->data,$matches);
-        if(!$output) throw new \Exception('Response error');
+        if(!$output){
+            $output = preg_match('/<title>(?<title>.*)<\/title>/',(string) $this->data,$matches);
+            if($output){
+                throw new \Exception('Response error - '.$matches['title']);
+            }
+            throw new \Exception('Response error');
+        }
 
 
         $tags = array();
