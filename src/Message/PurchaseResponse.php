@@ -13,6 +13,9 @@ class PurchaseResponse extends AbstractResponse implements RedirectResponseInter
 {
 
     private $tags=array();
+    
+    /* @var \Guzzle\Http\Message\Response */
+    private $response;
 
     private $decisionCodeMap = array(
         'ACCEPT' => array(100, 110),
@@ -55,6 +58,7 @@ Possible action: You can capture the authorization, but consider reviewing the o
     public function __construct(RequestInterface $request, \Guzzle\Http\Message\Response $response)
     {
         parent::__construct($request,$response->getBody());
+        $this->response=$response;
         $this->tags=$this->processData($this->data);
     }
 
@@ -78,6 +82,10 @@ Possible action: You can capture the authorization, but consider reviewing the o
     public function getRawData()
     {
         return $this->data;
+    }
+    
+    public function getResponse(){
+        return $this->response;
     }
 
     private function processData()

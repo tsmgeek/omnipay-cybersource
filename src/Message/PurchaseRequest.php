@@ -1,115 +1,26 @@
 <?php
 
 namespace Omnipay\Cybersource\Message;
-use Omnipay\Common\Message\AbstractRequest;
 
 /**
  * Cybersource Purchase Request
  */
 class PurchaseRequest extends AbstractRequest
 {
-    protected $testEndpoint = 'https://testsecureacceptance.cybersource.com/silent/pay';
-    protected $liveEndpoint = 'https://secureacceptance.cybersource.com/silent/pay';
-
-    public function getLocale()
+    public function getEndpoint()
     {
-        return 'en-us';
-    }
-
-    public function getEndPoint()
-    {
-        return $this->getTestMode() ? $this->testEndpoint : $this->liveEndpoint;
+        return parent::getEndpoint()."/pay";
     }
 
     public function getReference()
     {
-        return $this->getParameter('reference');
+        $ref = $this->getParameter('reference');
+        return (!is_null($ref)?$ref:'');
     }
 
     public function setReference($value)
     {
         return $this->setParameter('reference', $value);
-    }
-
-    public function getAccessKey()
-    {
-        return $this->getParameter('accessKey');
-    }
-
-    public function getSecretKey()
-    {
-        return $this->getParameter('secretKey');
-    }
-
-    public function getProfileId()
-    {
-        return $this->getParameter('profileId');
-    }
-
-    public function setAccessKey($value)
-    {
-        return $this->setParameter('accessKey', $value);
-    }
-
-    public function setSecretKey($value)
-    {
-        return $this->setParameter('secretKey', $value);
-    }
-
-    public function setProfileId($value)
-    {
-        return $this->setParameter('profileId', $value);
-    }
-
-    private function getBrandCode($brand)
-    {
-        $brands = array(
-            '001' => 'visa',
-            '002' => 'mastercard',
-            '003' => 'amex',
-            '004' => 'discover',
-            '005' => 'diners_club',
-            '006' => 'cart_blanche',
-            '007' => 'jcb',
-            '014' => 'enroute',
-            '021' => 'jal',
-            '024' => 'maestro_uk',
-            '031' => 'delta',
-            '034' => 'dankort',
-            '036' => 'carte_bleue',
-            '037' => 'carta_si',
-            '042' => 'maestro_int',
-            '043' => 'ge_money_uk_card'
-        );
-
-        foreach($brands as $code => $brandOption)
-        {
-            $brand = str_replace($brandOption, $code, $brand);
-        }
-
-        return $brand;
-    }
-
-    private function sign ($params) {
-        return $this->signData($this->buildDataToSign($params), $this->getSecretKey());
-    }
-
-    private function signData($data, $secretKey) {
-        return base64_encode(hash_hmac('sha256', $data, $secretKey, true));
-    }
-
-    private function buildDataToSign($params)
-    {
-        $signedFieldNames = explode(",",$params["signed_field_names"]);
-        foreach ($signedFieldNames as $field) {
-           $dataToSign[] = $field . "=" . $params[$field];
-        }
-        return $this->commaSeparate($dataToSign);
-    }
-
-    private function commaSeparate ($dataToSign)
-    {
-        return implode(",",$dataToSign);
     }
 
     public function getData()
@@ -145,11 +56,7 @@ class PurchaseRequest extends AbstractRequest
         $data['bill_to_address_postal_code'] = $this->getCard()->getBillingPostcode();
 
         // fill signed_filed_names out with all fields that need signing
-        $fields=array();
-        foreach($data as $k=>$v){
-            $fields[]=$k;
-        }
-        $data['signed_field_names'] = implode(',',$fields);
+        $data['signed_field_names'] = implode(',', array_keys($data));
 
         // unsigned fields
         $data['signature'] = $this->sign($data);
@@ -159,8 +66,8 @@ class PurchaseRequest extends AbstractRequest
 
     public function sendData($data)
     {
-        $httpResponse = $this->httpClient->post($this->getEndpoint(), null, $data)->send();
-
+        $request = $this->httpClient->post($this->getEndpoint(), array(), $data);
+        $httpResponse = $request->send();
         return $this->response = new PurchaseResponse($this, $httpResponse);
     }
 }
